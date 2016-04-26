@@ -82,16 +82,10 @@ def generate_ngram(candidate, reference, n):
 
 
 def get_count(candidate, reference, n):
-	# candidate = candidate.strip()
-	# reference = reference.strip()
 	can_dic, ref_dic, can_len = generate_ngram(candidate, reference, n)
 	can_clipped_dic = get_clipped_dic(can_dic, ref_dic)
 	can_clipped_count = get_clipped_count(can_clipped_dic)
 	return can_clipped_count, can_len
-
-	# c_c, t_c = modified_precision(uni_clipped_dic, bi_clipped_dic, tri_clipped_dic, four_clipped_dic, uni_c_len, bi_c_len, tri_c_len, four_c_len)
-	# return c_c, t_c
-	# penalty = brevity_penalty(candidate, reference)
 
 def main():
 	candidate_path = sys.argv[1]
@@ -144,10 +138,14 @@ def main():
 	print tri_c, tri_t, tri_p
 	print four_c, four_t, four_p
 	print can_len, ref_len, bp
-	tmpsum = 0.25*uni_p+0.25*bi_p+0.25*tri_p+0.25*four_p
-	print bp*math.exp(tmpsum)
 
+	val = [0.25*uni_p, 0.25*bi_p, 0.25*tri_p, 0.25*four_p]
 
+	tmpsum = math.fsum(val)
+	score = bp*math.exp(tmpsum)
+
+	with open('bleu_out.txt', 'w') as fout:
+		fout.write(str(score))
 
 if __name__ == "__main__":
     main()
