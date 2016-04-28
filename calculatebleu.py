@@ -24,49 +24,69 @@ def modified_precision(clipped_count, candidate_length):
 	precision = float(clipped_count)/float(candidate_length)
 	return math.log(precision)
 
-def get_clipped_dic(candidate_dic, reference_dic):
-	clipped_dic = {}
-	for key, value in candidate_dic.iteritems():
-		if reference_dic.has_key(key):
-			ref_v = reference_dic[key]
-			clipped_dic[key] = min(value, ref_v)
-	return clipped_dic
+# def get_clipped_dic(candidate_dic, reference_dic):
+# 	clipped_dic = {}
+# 	for key, value in candidate_dic.iteritems():
+# 		if reference_dic.has_key(key):
+# 			ref_v = reference_dic[key]
+# 			clipped_dic[key] = min(value, ref_v)
+# 	return clipped_dic
 
-def get_clipped_count(clipped_dic):
-	count = 0
-	for key, value in clipped_dic.iteritems():
-		count += value
-	return count
+# def get_clipped_count(clipped_dic):
+# 	count = 0
+# 	for key, value in clipped_dic.iteritems():
+# 		count += value
+# 	return count
 
+"""
+	Generate Ngram for each line.
 
-def generate_ref_ngram(reference, n):
-	ref_dic = {}
-	ref_list = reference.split(" ")
+	@line: a line of words
+	@n: ngram
+	return: a dictionary of words and its counts
+"""
+def generate_ngram(line, n):
+	ngram_dic = {}
+	word_list = line.split(" ")
 	
-	for i in range(0, len(ref_list)-n+1):
+	for i in range(0, len(word_list)-n+1):
 		key = ""
 		for j in range(0,  n):
-			key += ref_list[i+j]
+			key += word_list[i+j]
 			key += "/"
 
-		if ref_dic.has_key(key):
-			ref_dic[key] += 1
+		if ngram_dic.has_key(key):
+			ngram_dic[key] += 1
 		else:
-			ref_dic[key] = 1
-	return ref_dic
+			ngram_dic[key] = 1
+	return ngram_dic
 
+# def get_count(candidate, reference, n):
+# 	can_dic, ref_dic, can_len = generate_ngram(candidate, reference, n)
+# 	can_clipped_dic = get_clipped_dic(can_dic, ref_dic)
+# 	can_clipped_count = get_clipped_count(can_clipped_dic)
+# 	return can_clipped_count, can_len
 
-def get_count(candidate, reference, n):
-	can_dic, ref_dic, can_len = generate_ngram(candidate, reference, n)
-	can_clipped_dic = get_clipped_dic(can_dic, ref_dic)
-	can_clipped_count = get_clipped_count(can_clipped_dic)
-	return can_clipped_count, can_len
+"""
+	Merge dictionary list.
 
+	@dic_base: A list of dictionaries
+	@dic_add: A list of dictionaries
+	return: A merged list of dictionaries
+"""
 def merge_dic_list(dic_base, dic_add):
 	for i in range(0, len(dic_base)):
 		dic_base[i] = merge_dic(dic_base[i], dic_add[i])
 	return dic_base
 
+"""
+	Merge the base dictionary and new dictionary.
+	Use the max value for the key
+
+	@dic_base: Dictionary of words
+	@dic_add: Dictionary of words
+	return: A merged dictionary
+"""
 def merge_dic(dic_base, dic_add):
 	for key, value in dic_add.iteritems():
 		if dic_base.has_key(key):
@@ -75,6 +95,14 @@ def merge_dic(dic_base, dic_add):
 			dic_base[key] = value
 	return dic_base
 
+"""
+	Construct a list of reference ngram dictionaries from the reference path.
+	Since there might be multiple references, need to merge the count for each reference.
+
+	@reference_path: The directory to single/multiple refernce(s)
+	@n: n-gram
+	return: a list of dictionaries
+"""
 def construct_ref_dic_list(reference_path, n):
 	dic_list = []
 	for subdir, dirs, files in os.walk(reference_path):
@@ -90,7 +118,7 @@ def construct_ref_dic_list(reference_path, n):
 				if not line:
 					break
 				line = line.strip()
-				refdic = generate_ref_ngram(line, n)
+				refdic = generate_ngram(line, n)
 				tmplist.append(refdic)
 
 			if len(dic_list) == 0:
@@ -99,14 +127,34 @@ def construct_ref_dic_list(reference_path, n):
 				merge_dic_list(dic_list, tmplist)
 	return dic_list
 
+def construct_can_dic_list(candidate_path, n):
+	dic_list = []
+	candidate = codecs.open(candidate_path, encoding='utf-8')
+
+	while 1:
+		line = candidate.readline()
+		if not line:
+			break
+		line = line.strip()
+		candic = generate_ngram(line, n)
+		dic_list.append(candic)
+	return dic_list
+
 def main():
 	candidate_path = sys.argv[1]
 	reference_path = sys.argv[2]
-	# candidate = codecs.open(candidate_path, encoding='utf-8')
-	# reference = codecs.open(reference_path, encoding='utf-8')
 
-	construct_ref_dic_list(reference_path, 1)
+	uni_ref_list = construct_ref_dic_list(reference_path, 1)
+	bi_ref_list = construct_ref_dic_list(reference_path, 2)
+	tri_ref_list = construct_ref_dic_list(reference_path, 3)
+	four_ref_list = construct_ref_dic_list(reference_path, 4)
+
+	uni_can_list = construct_can_dic_list(candidate_path, 1)
+	bi_can_list = construct_can_dic_list(candidate_path, 2)
+	tri_can_list = construct_can_dic_list(candidate_path, 3)
+	four_can_list = construct_can_dic_list(candidate_path, 4)
 	
+
 	# can_len, ref_len = 0, 0
 
 	# uni_c, uni_t = 0, 0
