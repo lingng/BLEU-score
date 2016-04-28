@@ -62,27 +62,42 @@ def get_count(candidate, reference, n):
 	can_clipped_count = get_clipped_count(can_clipped_dic)
 	return can_clipped_count, can_len
 
+def merge_dic_list(dic_base, dic_add):
+	for i in range(0, len(dic_base)):
+		dic_base[i] = merge_dic(dic_base[i], dic_add[i])
+	return dic_base
+
+def merge_dic(dic_base, dic_add):
+	for key, value in dic_add.iteritems():
+		if dic_base.has_key(key):
+			dic_base[key] = max(value, dic_base[key])
+		else:
+			dic_base[key] = value
+	return dic_base
+
 def construct_ref_dic_list(reference_path, n):
-	# construct_ref_dic_list(reference_path)
 	dic_list = []
 	for subdir, dirs, files in os.walk(reference_path):
 		for f in files:
 			if f == ".DS_Store":
 				continue
+			tmplist = []
 			path = os.path.join(subdir, f)
 			reference = codecs.open(path, encoding='utf-8')
+
 			while 1:
 				line = reference.readline()
 				if not line:
 					break
 				line = line.strip()
 				refdic = generate_ref_ngram(line, n)
-				dic_list.append(refdic)
-	for item in dic_list:
-		print item
-		print "---"
-	print len(dic_list)
+				tmplist.append(refdic)
 
+			if len(dic_list) == 0:
+				dic_list = tmplist
+			else:
+				merge_dic_list(dic_list, tmplist)
+	return dic_list
 
 def main():
 	candidate_path = sys.argv[1]
